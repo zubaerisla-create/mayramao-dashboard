@@ -125,7 +125,7 @@ interface Subscription {
   planType: 'monthly' | 'yearly' | 'forever'
   price: number
   duration: number // in days
-    simulationsLimit?: string | number
+    simulationsLimit?:  number
   simulationsUnlimited?: boolean
   features: string[]
   isActive: boolean
@@ -149,7 +149,7 @@ interface CreateSubscriptionRequest {
   planType: 'monthly' | 'yearly' | 'forever'
   price: number
   duration: number
-   simulationsLimit?: string | number  // Make optional
+   simulationsLimit?:  number  // Make optional
   // simulationsUnlimited?: boolean // Remove if not needed
   features: string[]
   activePlan: boolean
@@ -160,7 +160,7 @@ interface UpdateSubscriptionRequest {
   planName?: string
   planType?: string
   duration?: number
-   simulationsLimit?: string | number
+   simulationsLimit?:  number
   // simulationsUnlimited?: boolean // Remove if not needed
   features?: string[]
   activePlan?: boolean

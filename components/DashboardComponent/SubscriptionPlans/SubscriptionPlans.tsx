@@ -12,7 +12,7 @@ interface Subscription {
   planType: 'monthly' | 'yearly' | 'forever'
   price: number
   duration: number
-  simulationsLimit?: string | number
+  simulationsLimit?: number
   simulationsUnlimited?: boolean
   features: string[]
   isActive: boolean
@@ -86,28 +86,16 @@ export default function SubscriptionPlan() {
     }
   }, [showAddModal]);
 
-  // Set edit form when editing plan changes - FIXED TYPE ISSUE HERE
+  // Set edit form when editing plan changes
   useEffect(() => {
     if (editingPlan) {
-      // Helper function to safely convert simulationsLimit to number
-      const getSimulationsLimitAsNumber = (limit: string | number | undefined): number => {
-        if (limit === undefined || limit === null) return 10;
-        if (typeof limit === 'string') {
-          // If it's 'unlimited' or other string, return 10 as default
-          if (limit.toLowerCase() === 'unlimited') return 10;
-          const parsed = parseInt(limit, 10);
-          return isNaN(parsed) ? 10 : parsed;
-        }
-        return limit; // It's already a number
-      };
-
       setEditForm({
         planName: editingPlan.planName,
         planType: editingPlan.planType,
         price: editingPlan.price,
         duration: editingPlan.duration,
         simulationsUnlimited: editingPlan.simulationsUnlimited ?? !editingPlan.simulationsLimit,
-        simulationsLimit: getSimulationsLimitAsNumber(editingPlan.simulationsLimit),
+        simulationsLimit: editingPlan.simulationsLimit || 10,
         features: [...editingPlan.features],
         activePlan: editingPlan.activePlan,
       });
@@ -153,9 +141,10 @@ export default function SubscriptionPlan() {
       activePlan: newPlan.activePlan,
     };
 
-    // Send simulationsLimit with special value for unlimited
+    // OPTION 1: Send simulationsLimit with special value for unlimited
     if (newPlan.simulationsUnlimited) {
-      payload.simulationsLimit = 'unlimited'; // or -1 if your backend supports negative
+      // Send a very large number or -1 to indicate unlimited
+      payload.simulationsLimit = 999999; // or -1 if your backend supports negative
     } else {
       if (newPlan.simulationsLimit <= 0) {
         toast.error('Simulations limit must be greater than 0');
@@ -163,6 +152,26 @@ export default function SubscriptionPlan() {
       }
       payload.simulationsLimit = newPlan.simulationsLimit;
     }
+
+    // OPTION 2: If backend expects a different field for unlimited
+    // Uncomment this if option 1 doesn't work
+    /*
+    if (newPlan.simulationsUnlimited) {
+      payload.unlimited = true;
+      payload.simulationsLimit = 0; // or null
+    } else {
+      payload.unlimited = false;
+      payload.simulationsLimit = newPlan.simulationsLimit;
+    }
+    */
+
+    // OPTION 3: If backend expects both fields
+    /*
+    payload.simulationsUnlimited = newPlan.simulationsUnlimited;
+    if (!newPlan.simulationsUnlimited) {
+      payload.simulationsLimit = newPlan.simulationsLimit;
+    }
+    */
 
     console.log('Sending payload:', payload); // Debug log
 
@@ -209,9 +218,10 @@ export default function SubscriptionPlan() {
       activePlan: editForm.activePlan,
     };
 
-    // Send simulationsLimit with special value for unlimited
+    // OPTION 1: Send simulationsLimit with special value for unlimited
     if (editForm.simulationsUnlimited) {
-      payload.simulationsLimit = 'unlimited'; // or -1 if your backend supports negative
+      // Send a very large number or -1 to indicate unlimited
+      payload.simulationsLimit = 999999; // or -1 if your backend supports negative
     } else {
       if (editForm.simulationsLimit <= 0) {
         toast.error('Simulations limit must be greater than 0');
@@ -219,6 +229,26 @@ export default function SubscriptionPlan() {
       }
       payload.simulationsLimit = editForm.simulationsLimit;
     }
+
+    // OPTION 2: If backend expects a different field for unlimited
+    // Uncomment this if option 1 doesn't work
+    /*
+    if (editForm.simulationsUnlimited) {
+      payload.unlimited = true;
+      payload.simulationsLimit = 0; // or null
+    } else {
+      payload.unlimited = false;
+      payload.simulationsLimit = editForm.simulationsLimit;
+    }
+    */
+
+    // OPTION 3: If backend expects both fields
+    /*
+    payload.simulationsUnlimited = editForm.simulationsUnlimited;
+    if (!editForm.simulationsUnlimited) {
+      payload.simulationsLimit = editForm.simulationsLimit;
+    }
+    */
 
     console.log('Sending update payload:', payload); // Debug log
 
