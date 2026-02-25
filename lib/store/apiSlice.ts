@@ -166,6 +166,108 @@ interface UpdateSubscriptionRequest {
   activePlan?: boolean
 }
 
+interface UserProfile {
+  _id: string
+  userId: string
+  __v: number
+  createdAt: string
+  currentSavings: number
+  dependents: string[]
+  existingLoans: boolean | number
+  fixedExpenses: {
+    rent: number
+    utilities: number
+    subscriptions?: number
+    subscriptionsInsurance?: number
+  }
+  householdResponsibilityLevel: string
+  incomeStability: string
+  monthlyIncome: number
+  riskTolerance: string
+  totalMonthlyLoanPayments: number
+  updatedAt: string
+  variableExpenses?: number
+  dateOfBirth?: string
+  fullName?: string
+  gender?: string
+  email?: string
+  goalDescription?: string
+  planName?: string
+  targetAmount?: number
+  targetDate?: string
+  profileImage?: string
+  contact?: {
+    fullName: string
+    email: string
+    description: string
+  }
+  subscription?: {
+    planId: string
+    planName: string
+    startedAt: string
+    expiresAt: string
+    stripePaymentIntentId: string
+    isActive: boolean
+    stripeChargeId: string
+    stripeCustomerId: string
+    stripePriceId: string
+    stripeSubscriptionId: string
+  }
+  purchaseSimulation?: {
+    purchaseAmount: number
+    paymentType: string
+    loanDuration: number
+    interestRate: number
+  }
+}
+
+
+interface User {
+  _id: string
+  name: string
+  email: string
+  verified: boolean
+  __v: number
+  profile?: UserProfile
+}
+
+interface UsersResponse {
+  success: boolean
+  users: User[]
+}
+
+interface ExtendSubscriptionRequest {
+  extraDays: number
+}
+
+interface ExtendSubscriptionResponse {
+  success: boolean
+  subscription: UserProfile['subscription']
+}
+
+interface DowngradeResponse {
+  success: boolean
+  message?: string
+}
+
+interface CancelResponse {
+  success: boolean
+  message?: string
+}
+
+// Add interface for update user status
+interface UpdateUserStatusRequest {
+  isActive: boolean
+}
+
+interface UpdateUserStatusResponse {
+  success: boolean
+  user: {
+    id: string
+    email: string
+    isActive: boolean
+  }
+}
 
 
 // Base query with CSRF token
@@ -188,14 +290,10 @@ const baseQuery = fetchBaseQuery({
   },
 })
 
-
-
-
-
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: baseQuery,
-  tagTypes:['Admin','Tickets', 'Subscriptions'],
+  tagTypes:['Admin','Tickets', 'Subscriptions','Users'],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -205,7 +303,7 @@ export const api = createApi({
       }),
     }),
 
-      // Get all subscriptions
+    // Get all subscriptions
     getSubscriptions: builder.query<SubscriptionsResponse, void>({
       query: () => ({
         url: '/api/v1/subscriptions',
@@ -252,7 +350,7 @@ export const api = createApi({
       invalidatesTags: ['Subscriptions'],
     }),
 
-     // Get all tickets
+    // Get all tickets
     getTickets: builder.query<TicketsResponse, void>({
       query: () => ({
         url: '/api/v1/tickets',
@@ -270,7 +368,7 @@ export const api = createApi({
       providesTags: ['Tickets'],
     }),
 
-     // Reply to a ticket
+    // Reply to a ticket
     replyToTicket: builder.mutation<ReplyResponse, { ticketId: string; reply: string }>({
       query: ({ ticketId, reply }) => ({
         url: `/api/v1/tickets/${ticketId}/reply`,
@@ -280,7 +378,7 @@ export const api = createApi({
       invalidatesTags: ['Tickets'],
     }),
 
-        // Get admin profile by ID
+    // Get admin profile by ID
     getAdminProfile: builder.query<AdminProfileResponse, string>({
       query: (adminId) => ({
         url: `/api/v1/admin/admins/${adminId}`,
@@ -288,7 +386,8 @@ export const api = createApi({
       }),
       providesTags: ['Admin'],
     }),
-     // Change password
+    
+    // Change password
     changePassword: builder.mutation<ChangePasswordResponse, ChangePasswordRequest>({
       query: (data) => ({
         url: '/api/v1/admin/change-password',
@@ -298,6 +397,52 @@ export const api = createApi({
       invalidatesTags: ['Admin'],
     }),
 
+    // Get all users with their subscription data
+    getUsers: builder.query<UsersResponse, void>({
+      query: () => ({
+        url: '/api/v1/admin/users',
+        method: 'GET',
+      }),
+      providesTags: ['Users'],
+    }),
+
+    // FIXED: Update user status (Block/Unblock)
+    updateUserStatus: builder.mutation<UpdateUserStatusResponse, { userId: string; isActive: boolean }>({
+      query: ({ userId, isActive }) => ({
+        url: `/api/v1/admin/users/${userId}`,
+        method: 'PUT',
+        body: { isActive },
+      }),
+      invalidatesTags: ['Users'],
+    }),
+
+    // Extend user subscription
+    extendSubscription: builder.mutation<ExtendSubscriptionResponse, { userId: string; extraDays: number }>({
+      query: ({ userId, extraDays }) => ({
+        url: `/api/v1/admin/users/${userId}/subscription/extend`,
+        method: 'PUT',
+        body: { extraDays },
+      }),
+      invalidatesTags: ['Users'],
+    }),
+
+    // Downgrade user subscription to free
+    downgradeSubscription: builder.mutation<DowngradeResponse, string>({
+      query: (userId) => ({
+        url: `/api/v1/admin/users/${userId}/subscription/downgrade`,
+        method: 'PUT',
+      }),
+      invalidatesTags: ['Users'],
+    }),
+
+    // Cancel user subscription
+    cancelSubscription: builder.mutation<CancelResponse, string>({
+      query: (userId) => ({
+        url: `/api/v1/admin/users/${userId}/subscription/cancel`,
+        method: 'PUT',
+      }),
+      invalidatesTags: ['Users'],
+    }),
 
     forgotPassword: builder.mutation<ForgotPasswordResponse, ForgotPasswordRequest>({
       query: (data) => ({
@@ -307,19 +452,19 @@ export const api = createApi({
       }),
     }),
     
-  // lib/store/apiSlice.ts
-resetPassword: builder.mutation<ResetPasswordResponse, ResetPasswordRequest>({
-  query: (data) => ({
-    url: '/api/v1/admin/reset-password',
-    method: 'POST',
-    body: {
-      email: data.email,
-      otp: data.otp, // Send exactly as received (string)
-      newPassword: data.newPassword,
-      confirmPassword: data.confirmPassword,
-    },
-  }),
-}),
+    resetPassword: builder.mutation<ResetPasswordResponse, ResetPasswordRequest>({
+      query: (data) => ({
+        url: '/api/v1/admin/reset-password',
+        method: 'POST',
+        body: {
+          email: data.email,
+          otp: data.otp,
+          newPassword: data.newPassword,
+          confirmPassword: data.confirmPassword,
+        },
+      }),
+    }),
+
     resendOtp: builder.mutation<ResendOtpResponse, ResendOtpRequest>({
       query: (data) => ({
         url: '/api/v1/admin/resend-otp',
@@ -328,8 +473,6 @@ resetPassword: builder.mutation<ResetPasswordResponse, ResetPasswordRequest>({
       }),
     }),
   }),
-
-  
 })
 
 export const {
@@ -339,12 +482,17 @@ export const {
   useResendOtpMutation,
   useGetAdminProfileQuery,
   useChangePasswordMutation,
-    useGetTicketsQuery,
+  useGetTicketsQuery,
   useGetTicketByIdQuery,
   useReplyToTicketMutation,
-    useGetSubscriptionsQuery,
+  useGetSubscriptionsQuery,
   useGetSubscriptionByIdQuery,
   useCreateSubscriptionMutation,
   useUpdateSubscriptionMutation,
   useDeleteSubscriptionMutation,
+  useGetUsersQuery,
+  useExtendSubscriptionMutation,
+  useDowngradeSubscriptionMutation,
+  useCancelSubscriptionMutation,
+  useUpdateUserStatusMutation, // This is now properly defined
 } = api
