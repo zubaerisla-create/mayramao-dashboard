@@ -125,11 +125,12 @@ interface Subscription {
   planType: 'monthly' | 'yearly' | 'forever'
   price: number
   duration: number // in days
-    simulationsLimit?:  number
+  simulationsLimit?: number
   simulationsUnlimited?: boolean
   features: string[]
   isActive: boolean
   activePlan: boolean
+  stripePriceId: string
   createdAt: string
   updatedAt: string
 }
@@ -149,10 +150,11 @@ interface CreateSubscriptionRequest {
   planType: 'monthly' | 'yearly' | 'forever'
   price: number
   duration: number
-   simulationsLimit?:  number  // Make optional
+  simulationsLimit?: number  // Make optional
   // simulationsUnlimited?: boolean // Remove if not needed
   features: string[]
   activePlan: boolean
+  stripePriceId: string
 }
 
 interface UpdateSubscriptionRequest {
@@ -160,10 +162,11 @@ interface UpdateSubscriptionRequest {
   planName?: string
   planType?: string
   duration?: number
-   simulationsLimit?:  number
+  simulationsLimit?: number
   // simulationsUnlimited?: boolean // Remove if not needed
   features?: string[]
   activePlan?: boolean
+  stripePriceId?: string
 }
 
 interface UserProfile {
@@ -276,15 +279,15 @@ const baseQuery = fetchBaseQuery({
   prepareHeaders: (headers, { getState }) => {
     const csrfToken = 'ZEoVg1VUNKpv7AZwD9GCZMK4kjWO7j5riRPX3uo7cUwcNrNxQxD6GAvPCPBL7Tuh'
     const token = (getState() as RootState).auth.accessToken
-    
+
     if (csrfToken) {
       headers.set('X-CSRFTOKEN', csrfToken)
     }
-    
+
     if (token) {
       headers.set('Authorization', `Bearer ${token}`)
     }
-    
+
     headers.set('Content-Type', 'application/json')
     return headers
   },
@@ -293,7 +296,7 @@ const baseQuery = fetchBaseQuery({
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: baseQuery,
-  tagTypes:['Admin','Tickets', 'Subscriptions','Users'],
+  tagTypes: ['Admin', 'Tickets', 'Subscriptions', 'Users'],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -358,7 +361,7 @@ export const api = createApi({
       }),
       providesTags: ['Tickets'],
     }),
-    
+
     // Get single ticket by ticketId
     getTicketById: builder.query<SingleTicketResponse, string>({
       query: (ticketId) => ({
@@ -386,7 +389,7 @@ export const api = createApi({
       }),
       providesTags: ['Admin'],
     }),
-    
+
     // Change password
     changePassword: builder.mutation<ChangePasswordResponse, ChangePasswordRequest>({
       query: (data) => ({
@@ -451,7 +454,7 @@ export const api = createApi({
         body: data,
       }),
     }),
-    
+
     resetPassword: builder.mutation<ResetPasswordResponse, ResetPasswordRequest>({
       query: (data) => ({
         url: '/api/v1/admin/reset-password',

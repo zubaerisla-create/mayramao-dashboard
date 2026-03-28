@@ -17,6 +17,7 @@ interface Subscription {
   features: string[]
   isActive: boolean
   activePlan: boolean
+  stripePriceId: string
   createdAt: string
   updatedAt: string
 }
@@ -27,11 +28,11 @@ export default function SubscriptionPlan() {
   const [editingPlan, setEditingPlan] = useState<Subscription | null>(null);
 
   // Fetch subscriptions with auto-refresh
-  const { 
-    data: subscriptionsData, 
-    isLoading, 
+  const {
+    data: subscriptionsData,
+    isLoading,
     error,
-    refetch 
+    refetch
   } = useGetSubscriptionsQuery(undefined, {
     pollingInterval: 10000,
     refetchOnFocus: true,
@@ -53,6 +54,7 @@ export default function SubscriptionPlan() {
     simulationsLimit: 10,
     features: [] as string[],
     activePlan: true,
+    stripePriceId: "",
   });
 
   const [featureInputs, setFeatureInputs] = useState<string[]>([""]);
@@ -67,6 +69,7 @@ export default function SubscriptionPlan() {
     simulationsLimit: 10,
     features: [] as string[],
     activePlan: true,
+    stripePriceId: "",
   });
 
   // Reset feature inputs when modal closes
@@ -82,6 +85,7 @@ export default function SubscriptionPlan() {
         simulationsLimit: 10,
         features: [],
         activePlan: true,
+        stripePriceId: "",
       });
     }
   }, [showAddModal]);
@@ -98,6 +102,7 @@ export default function SubscriptionPlan() {
         simulationsLimit: editingPlan.simulationsLimit || 10,
         features: [...editingPlan.features],
         activePlan: editingPlan.activePlan,
+        stripePriceId: editingPlan.stripePriceId || "",
       });
     }
   }, [editingPlan]);
@@ -110,7 +115,7 @@ export default function SubscriptionPlan() {
   const handleCreate = async () => {
     // Filter out empty features
     const nonEmptyFeatures = featureInputs.filter(feature => feature.trim() !== "");
-    
+
     if (!newPlan.planName.trim()) {
       toast.error('Plan name is required');
       return;
@@ -131,6 +136,11 @@ export default function SubscriptionPlan() {
       return;
     }
 
+    if (!newPlan.stripePriceId.trim()) {
+      toast.error('Stripe Price ID is required');
+      return;
+    }
+
     // Base payload with required fields
     const payload: any = {
       planName: newPlan.planName,
@@ -139,6 +149,7 @@ export default function SubscriptionPlan() {
       duration: newPlan.planType === 'forever' ? 36500 : newPlan.duration,
       features: nonEmptyFeatures,
       activePlan: newPlan.activePlan,
+      stripePriceId: newPlan.stripePriceId,
     };
 
     // OPTION 1: Send simulationsLimit with special value for unlimited
@@ -208,6 +219,11 @@ export default function SubscriptionPlan() {
       return;
     }
 
+    if (!editForm.stripePriceId.trim()) {
+      toast.error('Stripe Price ID is required');
+      return;
+    }
+
     // Base payload with required fields
     const payload: any = {
       planName: editForm.planName,
@@ -216,6 +232,7 @@ export default function SubscriptionPlan() {
       duration: editForm.planType === 'forever' ? 36500 : editForm.duration,
       features: editForm.features,
       activePlan: editForm.activePlan,
+      stripePriceId: editForm.stripePriceId,
     };
 
     // OPTION 1: Send simulationsLimit with special value for unlimited
@@ -391,7 +408,7 @@ export default function SubscriptionPlan() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-500 text-xl mb-4">Failed to load subscriptions</div>
-          <button 
+          <button
             onClick={() => refetch()}
             className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
           >
@@ -413,8 +430,7 @@ export default function SubscriptionPlan() {
             <div className="flex items-center gap-3">
               <h1 className="text-[30px] font-bold text-gray-900">Subscription Plans</h1>
               <div className="flex items-center gap-1 text-xs text-gray-400">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>live</span>
+
               </div>
             </div>
             <p className="mt-1.5 text-sm text-gray-600">
@@ -434,9 +450,8 @@ export default function SubscriptionPlan() {
           {plans.map((plan) => (
             <div
               key={plan._id}
-              className={`relative rounded-2xl border p-6 shadow-sm ${
-                plan.planType === "yearly" ? "border-amber-200 bg-gradient-to-b from-amber-50/70 to-white" : "bg-white"
-              }`}
+              className={`relative rounded-2xl border p-6 shadow-sm ${plan.planType === "yearly" ? "border-amber-200 bg-gradient-to-b from-amber-50/70 to-white" : "bg-white"
+                }`}
             >
               {/* Header */}
               <div className="mb-4 flex items-start justify-between">
@@ -444,11 +459,10 @@ export default function SubscriptionPlan() {
                   <h3 className="text-xl font-semibold text-gray-900">{plan.planName}</h3>
                   <div className="mt-1.5 flex items-center gap-2">
                     <span
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        plan.activePlan
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${plan.activePlan
                           ? "bg-green-100 text-green-800"
                           : "bg-gray-200 text-gray-700"
-                      }`}
+                        }`}
                     >
                       {plan.activePlan ? "Active" : "Inactive"}
                     </span>
@@ -514,11 +528,10 @@ export default function SubscriptionPlan() {
               {/* Action */}
               <button
                 onClick={() => handleToggleActive(plan)}
-                className={`w-full rounded-lg py-2.5 text-sm font-medium transition ${
-                  plan.activePlan
+                className={`w-full rounded-lg py-2.5 text-sm font-medium transition ${plan.activePlan
                     ? "border border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
                     : "bg-emerald-600 text-white hover:bg-emerald-700"
-                }`}
+                  }`}
               >
                 {plan.activePlan ? "× Deactivate Plan" : "✓ Activate Plan"}
               </button>
@@ -546,17 +559,17 @@ export default function SubscriptionPlan() {
                   placeholder="e.g., Premium Monthly"
                   className="mt-1.5 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   value={newPlan.planName}
-                  onChange={(e) => setNewPlan({...newPlan, planName: e.target.value})}
+                  onChange={(e) => setNewPlan({ ...newPlan, planName: e.target.value })}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Plan Type *</label>
-                  <select 
+                  <select
                     className="mt-1.5 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm"
                     value={newPlan.planType}
-                    onChange={(e) => setNewPlan({...newPlan, planType: e.target.value as 'monthly' | 'yearly' | 'forever'})}
+                    onChange={(e) => setNewPlan({ ...newPlan, planType: e.target.value as 'monthly' | 'yearly' | 'forever' })}
                   >
                     <option value="monthly">Monthly</option>
                     <option value="yearly">Yearly</option>
@@ -570,19 +583,30 @@ export default function SubscriptionPlan() {
                     step="0.01"
                     min="0"
                     value={newPlan.price}
-                    onChange={(e) => setNewPlan({...newPlan, price: parseFloat(e.target.value)})}
+                    onChange={(e) => setNewPlan({ ...newPlan, price: parseFloat(e.target.value) })}
                     className="mt-1.5 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm"
                   />
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Stripe Price ID *</label>
+                <input
+                  type="text"
+                  placeholder="e.g., price_123abcXYZ"
+                  className="mt-1.5 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  value={newPlan.stripePriceId}
+                  onChange={(e) => setNewPlan({ ...newPlan, stripePriceId: e.target.value })}
+                />
+              </div>
+
               {newPlan.planType !== 'forever' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Duration (days) *</label>
-                  <select 
+                  <select
                     className="mt-1.5 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm"
                     value={newPlan.duration}
-                    onChange={(e) => setNewPlan({...newPlan, duration: parseInt(e.target.value)})}
+                    onChange={(e) => setNewPlan({ ...newPlan, duration: parseInt(e.target.value) })}
                   >
                     <option value={30}>1 Month (30 days)</option>
                     <option value={90}>3 Months (90 days)</option>
@@ -599,24 +623,22 @@ export default function SubscriptionPlan() {
                 <div className="flex items-center gap-4 mb-3">
                   <button
                     type="button"
-                    onClick={() => setNewPlan({...newPlan, simulationsUnlimited: true})}
-                    className={`flex-1 py-2 px-3 rounded-lg border flex items-center justify-center gap-2 transition ${
-                      newPlan.simulationsUnlimited
+                    onClick={() => setNewPlan({ ...newPlan, simulationsUnlimited: true })}
+                    className={`flex-1 py-2 px-3 rounded-lg border flex items-center justify-center gap-2 transition ${newPlan.simulationsUnlimited
                         ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
                         : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     <Infinity size={18} />
                     <span className="text-sm font-medium">Unlimited</span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => setNewPlan({...newPlan, simulationsUnlimited: false})}
-                    className={`flex-1 py-2 px-3 rounded-lg border flex items-center justify-center gap-2 transition ${
-                      !newPlan.simulationsUnlimited
+                    onClick={() => setNewPlan({ ...newPlan, simulationsUnlimited: false })}
+                    className={`flex-1 py-2 px-3 rounded-lg border flex items-center justify-center gap-2 transition ${!newPlan.simulationsUnlimited
                         ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
                         : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     <span className="text-sm font-medium">Limited</span>
                   </button>
@@ -631,7 +653,7 @@ export default function SubscriptionPlan() {
                       type="number"
                       min="1"
                       value={newPlan.simulationsLimit}
-                      onChange={(e) => setNewPlan({...newPlan, simulationsLimit: parseInt(e.target.value)})}
+                      onChange={(e) => setNewPlan({ ...newPlan, simulationsLimit: parseInt(e.target.value) })}
                       className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                       placeholder="Enter simulation limit"
                     />
@@ -641,7 +663,7 @@ export default function SubscriptionPlan() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">Features *</label>
-                
+
                 {/* Dynamic Feature Input Fields */}
                 <div className="mt-2 space-y-2">
                   {featureInputs.map((feature, index) => (
@@ -680,7 +702,7 @@ export default function SubscriptionPlan() {
                   type="checkbox"
                   id="activePlan"
                   checked={newPlan.activePlan}
-                  onChange={(e) => setNewPlan({...newPlan, activePlan: e.target.checked})}
+                  onChange={(e) => setNewPlan({ ...newPlan, activePlan: e.target.checked })}
                   className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                 />
                 <label htmlFor="activePlan" className="text-sm text-gray-700">
@@ -740,7 +762,7 @@ export default function SubscriptionPlan() {
                 <input
                   type="text"
                   value={editForm.planName}
-                  onChange={(e) => setEditForm({...editForm, planName: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, planName: e.target.value })}
                   className="mt-1.5 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
@@ -748,9 +770,9 @@ export default function SubscriptionPlan() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Plan Type *</label>
-                  <select 
+                  <select
                     value={editForm.planType}
-                    onChange={(e) => setEditForm({...editForm, planType: e.target.value as 'monthly' | 'yearly' | 'forever'})}
+                    onChange={(e) => setEditForm({ ...editForm, planType: e.target.value as 'monthly' | 'yearly' | 'forever' })}
                     className="mt-1.5 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm"
                   >
                     <option value="monthly">Monthly</option>
@@ -765,18 +787,29 @@ export default function SubscriptionPlan() {
                     step="0.01"
                     min="0"
                     value={editForm.price}
-                    onChange={(e) => setEditForm({...editForm, price: parseFloat(e.target.value)})}
+                    onChange={(e) => setEditForm({ ...editForm, price: parseFloat(e.target.value) })}
                     className="mt-1.5 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm"
                   />
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Stripe Price ID *</label>
+                <input
+                  type="text"
+                  placeholder="e.g., price_123abcXYZ"
+                  className="mt-1.5 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  value={editForm.stripePriceId}
+                  onChange={(e) => setEditForm({ ...editForm, stripePriceId: e.target.value })}
+                />
+              </div>
+
               {editForm.planType !== 'forever' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Duration (days) *</label>
-                  <select 
+                  <select
                     value={editForm.duration}
-                    onChange={(e) => setEditForm({...editForm, duration: parseInt(e.target.value)})}
+                    onChange={(e) => setEditForm({ ...editForm, duration: parseInt(e.target.value) })}
                     className="mt-1.5 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm"
                   >
                     <option value={30}>1 Month (30 days)</option>
@@ -794,24 +827,22 @@ export default function SubscriptionPlan() {
                 <div className="flex items-center gap-4 mb-3">
                   <button
                     type="button"
-                    onClick={() => setEditForm({...editForm, simulationsUnlimited: true})}
-                    className={`flex-1 py-2 px-3 rounded-lg border flex items-center justify-center gap-2 transition ${
-                      editForm.simulationsUnlimited
+                    onClick={() => setEditForm({ ...editForm, simulationsUnlimited: true })}
+                    className={`flex-1 py-2 px-3 rounded-lg border flex items-center justify-center gap-2 transition ${editForm.simulationsUnlimited
                         ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
                         : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     <Infinity size={18} />
                     <span className="text-sm font-medium">Unlimited</span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => setEditForm({...editForm, simulationsUnlimited: false})}
-                    className={`flex-1 py-2 px-3 rounded-lg border flex items-center justify-center gap-2 transition ${
-                      !editForm.simulationsUnlimited
+                    onClick={() => setEditForm({ ...editForm, simulationsUnlimited: false })}
+                    className={`flex-1 py-2 px-3 rounded-lg border flex items-center justify-center gap-2 transition ${!editForm.simulationsUnlimited
                         ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
                         : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     <span className="text-sm font-medium">Limited</span>
                   </button>
@@ -826,7 +857,7 @@ export default function SubscriptionPlan() {
                       type="number"
                       min="1"
                       value={editForm.simulationsLimit}
-                      onChange={(e) => setEditForm({...editForm, simulationsLimit: parseInt(e.target.value)})}
+                      onChange={(e) => setEditForm({ ...editForm, simulationsLimit: parseInt(e.target.value) })}
                       className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                       placeholder="Enter simulation limit"
                     />
@@ -870,7 +901,7 @@ export default function SubscriptionPlan() {
                   type="checkbox"
                   id="editActivePlan"
                   checked={editForm.activePlan}
-                  onChange={(e) => setEditForm({...editForm, activePlan: e.target.checked})}
+                  onChange={(e) => setEditForm({ ...editForm, activePlan: e.target.checked })}
                   className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                 />
                 <label htmlFor="editActivePlan" className="text-sm text-gray-700">

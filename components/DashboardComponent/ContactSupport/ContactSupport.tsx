@@ -256,8 +256,6 @@ export default function ContactSupport() {
         <div className="flex justify-between items-center mb-2">
           <h1 className="text-[30px] font-bold">Contact & Support</h1>
           <div className="flex items-center gap-2 text-sm text-gray-500">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span>Auto-refreshing every 10s</span>
           </div>
         </div>
         <p className="text-gray-600 mb-6">Manage user support messages and inquiries</p>
