@@ -114,59 +114,62 @@ export default function DashboardLayout({
           className="border-t border-[#10B981] border-opacity-30 origin-left"
         />
         
-        <nav className="mt-6 h-[calc(100%-5rem)] overflow-y-auto pb-20">
-          {sidebarItems.map((item, index) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href
-            return (
-              <motion.div
-                key={item.name}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 + 0.2 }}
-              >
-                <Link
-                  href={item.href}
-                  className={`flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 ${
-                    isActive 
-                      ? 'bg-[#10B981] text-white border-l-4 border-[#10B981]' 
-                      : ''
-                  }`}
-                  onClick={() => isMobile && setSidebarOpen(false)}
+        <nav className="flex flex-col h-[calc(100%-4rem)]">
+          <div className="flex-1 overflow-y-auto py-4">
+            {sidebarItems.map((item, index) => {
+              const Icon = item.icon
+              const isActive = pathname === item.href
+              return (
+                <motion.div
+                  key={item.name}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 + 0.2 }}
                 >
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="mr-4"
+                  <Link
+                    href={item.href}
+                    className={`flex items-center px-6 py-3 mx-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 ${
+                      isActive 
+                        ? 'bg-[#10B981] text-white' 
+                        : ''
+                    }`}
+                    onClick={() => isMobile && setSidebarOpen(false)}
                   >
-                    <Icon size={20} />
-                  </motion.div>
-                  <span className="text-sm font-medium">{item.name}</span>
-                </Link>
-              </motion.div>
-            )
-          })}
+                    <motion.div
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="mr-4"
+                    >
+                      <Icon size={20} />
+                    </motion.div>
+                    <span className="text-sm font-medium">{item.name}</span>
+                  </Link>
+                </motion.div>
+              )
+            })}
+          </div>
           
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="absolute bottom-4 left-0 right-0 px-4"
-          >
-            <button
-              onClick={handleLogout}
-              className="flex items-center w-full px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 rounded-lg mx-2"
+          <div className="px-4 pb-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
             >
-              <motion.div
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                className="mr-4"
+              <button
+                onClick={handleLogout}
+                className="flex items-center w-full px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 rounded-lg"
               >
-                <LogOut size={20} />
-              </motion.div>
-              <span className="text-sm font-medium">Logout</span>
-            </button>
-          </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="mr-4"
+                >
+                  <LogOut size={20} />
+                </motion.div>
+                <span className="text-sm font-medium">Logout</span>
+              </button>
+            </motion.div>
+          </div>
         </nav>
       </motion.div>
 

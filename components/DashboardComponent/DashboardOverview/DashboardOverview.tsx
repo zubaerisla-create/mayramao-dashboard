@@ -29,25 +29,10 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, Variants } from "framer-motion";
 import { div } from "framer-motion/client";
+import { useGetDashboardStatsQuery } from "@/lib/store/apiSlice";
+import { Loader2 } from "lucide-react";
 
-// ── Mock Data ────────────────────────────────────────────────
-const revenueTrend = [
-  { month: "Aug", revenue: 3000 },
-  { month: "Sep", revenue: 3400 },
-  { month: "Oct", revenue: 4100 },
-  { month: "Nov", revenue: 4300 },
-  { month: "Dec", revenue: 4500 },
-  { month: "Jan",  revenue: 4320 },
-  { month: "Feb",  revenue: 4800 },
-];
-
-const subscriptionData = [
-  { name: "Free Users", value: 76, color: "#6b7280" },
-  { name: "Premium Monthly", value: 15, color: "#f59e0b" },
-  { name: "Premium Yearly", value: 9, color: "#10b981" },
-];
-
-const COLORS = ["#6b7280", "#f59e0b", "#10b981"];
+const COLORS = ["#6b7280", "#f59e0b", "#10b981", "#3b82f6", "#ef4444", "#8b5cf6"];
 
 // Animation Variants with proper typing
 const containerVariants: Variants = {
@@ -178,6 +163,34 @@ function StatCard({ title, value, icon, trend, trendUp = true, className, index 
 
 // ── Main Dashboard ──────────────────────────────────────────
 export default function DashboardOverview() {
+  const { data, isLoading, isError } = useGetDashboardStatsQuery();
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-red-500 font-medium">Failed to load dashboard statistics.</p>
+      </div>
+    );
+  }
+
+  const stats = data?.stats;
+  const revenueTrend = stats?.revenueTrend || [];
+  
+  const totalSubscriptions = stats?.subscriptionDistribution?.reduce((acc, curr) => acc + curr.count, 0) || 1;
+  const subscriptionData = stats?.subscriptionDistribution?.map((item) => ({
+    name: item.name,
+    value: item.count,
+    percentage: Math.round((item.count / totalSubscriptions) * 100),
+  })) || [];
+
   return (
     <motion.div 
       className="flex min-h-screen flex-col"
@@ -215,46 +228,44 @@ export default function DashboardOverview() {
         >
           <StatCard
             title="Total Users"
-            value="2,847"
+            value={stats?.totalUsers?.toLocaleString() || "0"}
             icon={<div className="jbg" ><Users className="h-5 w-5 " /></div>}
             className="bg-gradient-to-br from-blue-50 to-blue-100/40 border-blue-200"
             index={0}
           />
           <StatCard
             title="Active Users"
-            value="1,923"
+            value={stats?.activeUsers?.toLocaleString() || "0"}
             icon={<Activity className="h-5 w-5" />}
             className="bg-gradient-to-br from-emerald-50 to-emerald-100/40 border-emerald-200"
             index={1}
           />
           <StatCard
             title="Total Simulations Run"
-            value="18,342"
+            value={stats?.totalSimulations?.toLocaleString() || "0"}
             icon={<BarChart3 className="h-5 w-5" />}
             className="bg-gradient-to-br from-purple-50 to-purple-100/40 border-purple-200"
             index={2}
           />
           <StatCard
             title="New Support Messages"
-            value="12"
+            value={stats?.newSupportMessages?.toLocaleString() || "0"}
             icon={<Mail className="h-5 w-5" />}
             className="bg-gradient-to-br from-rose-50 to-rose-100/40 border-rose-200"
             index={3}
           />
           <StatCard
             title="Total Revenue"
-            value="$47,856"
+            value={`$${stats?.totalRevenue?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`}
             icon={<DollarSign className="h-5 w-5" />}
-            trend="↑ 15.6% from last month"
-            trendUp
+            className="bg-gradient-to-br from-emerald-50 to-emerald-100/40 border-emerald-200"
             index={4}
           />
           <StatCard
             title="Monthly Revenue"
-            value="$4,320"
+            value={`$${stats?.monthlyRevenue?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`}
             icon={<DollarSign className="h-5 w-5" />}
-            trend="↑ 8.3% from last month"
-            trendUp
+            className="bg-gradient-to-br from-blue-50 to-blue-100/40 border-blue-200"
             index={5}
           />
         </motion.div>
@@ -428,7 +439,7 @@ export default function DashboardOverview() {
                       <div className="flex items-center gap-2">
                         <motion.div 
                           className="h-3 w-3 rounded-full" 
-                          style={{ backgroundColor: COLORS[index] }}
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
                           whileHover={{ scale: 1.5 }}
                           animate={{ 
                             scale: [1, 1.2, 1],
@@ -443,7 +454,7 @@ export default function DashboardOverview() {
                         <span className="font-medium">{item.name}</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-muted-foreground">{item.value}%</span>
+                        <span className="text-muted-foreground">{(item as any).percentage}%</span>
                         <motion.div
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.95 }}
@@ -452,8 +463,8 @@ export default function DashboardOverview() {
                             variant="outline" 
                             className="bg-opacity-50 cursor-default"
                             style={{ 
-                              borderColor: COLORS[index],
-                              color: COLORS[index]
+                              borderColor: COLORS[index % COLORS.length],
+                              color: COLORS[index % COLORS.length]
                             }}
                           >
                             {item.value} users

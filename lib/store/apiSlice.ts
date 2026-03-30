@@ -272,6 +272,21 @@ interface UpdateUserStatusResponse {
   }
 }
 
+// Add interfaces for Dashboard Stats
+interface DashboardStatsResponse {
+  success: boolean
+  stats: {
+    totalUsers: number
+    activeUsers: number
+    totalSimulations: number
+    newSupportMessages: number
+    totalRevenue: number
+    monthlyRevenue: number
+    revenueTrend: { month: string; revenue: number }[]
+    subscriptionDistribution: { name: string; count: number }[]
+  }
+}
+
 
 // Base query with CSRF token
 const baseQuery = fetchBaseQuery({
@@ -475,6 +490,15 @@ export const api = createApi({
         body: data,
       }),
     }),
+
+    // Get dashboard stats
+    getDashboardStats: builder.query<DashboardStatsResponse, void>({
+      query: () => ({
+        url: '/api/v1/admin/dashboard-stats',
+        method: 'GET',
+      }),
+      providesTags: ['Users', 'Tickets', 'Subscriptions'],
+    }),
   }),
 })
 
@@ -498,4 +522,5 @@ export const {
   useDowngradeSubscriptionMutation,
   useCancelSubscriptionMutation,
   useUpdateUserStatusMutation, // This is now properly defined
+  useGetDashboardStatsQuery,
 } = api
